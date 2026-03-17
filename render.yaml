@@ -1,0 +1,14 @@
+# Render Blueprint - YouTube Music Playlist Downloader
+# Deploy: Connect repo at render.com, or use: render deploy
+services:
+  - type: web
+    name: music-downloader
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: COOKIES_BASE64
+        sync: false
+        # Set in Render Dashboard: base64 of your cookies.txt
+      - key: PYTHONUNBUFFERED
+        value: "1"

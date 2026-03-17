@@ -1,0 +1,40 @@
+# Secrets & auth
+.env
+cookies.txt
+cookies_base64.txt
+creds_b64.txt
+token_b64.txt
+oauth.json
+token.json
+token_drive.json
+credentials.json
+headers.json
+browser.json
+
+# Database & state
+state.db
+*.db
+
+# Downloads
+downloads/
+music/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

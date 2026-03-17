@@ -1,0 +1,24 @@
+playlists:
+- id: PL8UL4paT1gcsKL9ZXWq57nUK-VGNSBLyD
+  name: My Favorites
+  paused: false
+  thumbnail: https://i.ytimg.com/vi/K2lFQymILdQ/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLAjYnF0kXOup0lOa0APrUHJ8WZZjg
+- id: PL8UL4paT1gct7P7b6ubuTVghYDX8bybib
+  name: Test
+  thumbnail: https://i.ytimg.com/vi/BOMFt9OCsT0/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLDihbdmvYx4oPqmOjX8xJ6XX_fnEw
+- id: PL8UL4paT1gctsWmFpgvAazU8ItqEAZTuZ
+  name: Dark techno
+  paused: false
+  thumbnail: https://i.ytimg.com/vi/fAe9y0pzHbo/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLBZkOgeqDA7YE0Q3wIdfosJCfl12w
+download:
+  output_dir: ./downloads
+  format: wav
+  quality: '0'
+  cookies_browser: chrome
+storage:
+  local: true
+  local_path: ~/Music/YouTube
+  google_drive: false
+  drive_folder_id: ''
+schedule:
+  interval_minutes: 15

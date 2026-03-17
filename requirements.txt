@@ -1,0 +1,20 @@
+# YouTube Music playlist access
+ytmusicapi>=1.6.0
+
+# Download & convert
+yt-dlp>=2024.1.0
+
+# Google Drive upload
+google-api-python-client>=2.100.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.0
+
+# Scheduling (Phase 5)
+apscheduler>=3.10.0
+
+# Config
+pyyaml>=6.0
+
+# API
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
