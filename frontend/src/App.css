@@ -149,6 +149,41 @@ svg.connector path {
   font-weight: 600;
 }
 
+.format-selector {
+  display: flex;
+  gap: 4px;
+  background: #E2E8F0;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+}
+
+.format-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.format-btn:hover:not(:disabled) {
+  color: var(--text-main);
+}
+
+.format-btn.active {
+  background: var(--surface);
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.format-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -733,10 +768,45 @@ svg.connector path {
   min-width: 36px;
 }
 
+.app-error-block {
+  padding: 16px 20px;
+  background: rgba(244, 63, 94, 0.08);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
 .app-error {
   color: var(--accent-pink);
   font-weight: 600;
-  margin: 0;
+  margin: 0 0 8px 0;
+}
+
+.app-error-hint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+}
+
+.app-error-hint code {
+  background: var(--surface);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.app-retry-btn {
+  background: var(--accent-pink);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.app-retry-btn:hover {
+  opacity: 0.9;
 }
 
 .app-loading {

@@ -87,8 +87,16 @@ export default function App() {
 
           <SyncProgress syncing={syncing} />
 
-          {error && <p className="app-error">{error}</p>}
-          {loading && <p className="app-loading">Loading…</p>}
+          {error && (
+            <div className="app-error-block">
+              <p className="app-error">{error}</p>
+              <p className="app-error-hint">Start the server: <code>./run.sh</code> or <code>python api.py</code></p>
+              <button type="button" className="app-retry-btn" onClick={() => { setError(null); setLoading(true); fetchPlaylists().then(setPlaylists).catch((e) => setError(e.message)).finally(() => setLoading(false)); }}>
+                Retry
+              </button>
+            </div>
+          )}
+          {loading && !error && <p className="app-loading">Loading…</p>}
 
           <div className="view-container">
             <div className={`view-section ${view === 'playlist' ? 'active' : ''}`} id="view-playlist">

@@ -67,7 +67,8 @@ def upload_file(
         return None
 
     name = file_name or file_path.name
-    mime_type = "audio/wav" if file_path.suffix.lower() == ".wav" else "application/octet-stream"
+    ext = file_path.suffix.lower()
+    mime_type = "audio/wav" if ext == ".wav" else "audio/mpeg" if ext == ".mp3" else "application/octet-stream"
 
     file_metadata = {"name": name}
     if folder_id:

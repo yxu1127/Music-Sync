@@ -12,7 +12,7 @@ playlists:
   thumbnail: https://i.ytimg.com/vi/fAe9y0pzHbo/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLBZkOgeqDA7YE0Q3wIdfosJCfl12w
 download:
   output_dir: ./downloads
-  format: wav
+  format: mp3
   quality: '0'
   cookies_browser: chrome
 storage:

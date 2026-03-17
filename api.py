@@ -64,6 +64,10 @@ class UpdateScheduleRequest(BaseModel):
     interval_minutes: int
 
 
+class UpdateFormatRequest(BaseModel):
+    format: str
+
+
 class SyncSummary(BaseModel):
     playlist_id: str
     playlist_name: str
@@ -141,9 +145,12 @@ def list_playlists():
         for p in playlists:
             thumb = p.get("thumbnail")
             if not thumb:
-                thumb = get_playlist_thumbnail(p["id"])
-                if thumb:
-                    save_playlist_thumbnail(p["id"], thumb)
+                try:
+                    thumb = get_playlist_thumbnail(p["id"])
+                    if thumb:
+                        save_playlist_thumbnail(p["id"], thumb)
+                except Exception:
+                    pass
             result.append(
                 PlaylistInfo(
                     id=p["id"],
@@ -231,6 +238,20 @@ def update_schedule(body: UpdateScheduleRequest):
     try:
         set_schedule_interval(body.interval_minutes)
         return {"success": True, "interval_minutes": body.interval_minutes}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/api/config/format")
+def update_format(body: UpdateFormatRequest):
+    """Update download format (wav or mp3)."""
+    from src.config import set_download_format
+
+    try:
+        set_download_format(body.format)
+        return {"success": True, "format": body.format}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -395,7 +416,7 @@ def trigger_sync(request: SyncRequest = SyncRequest()):
     )
 
 
-# Serve built frontend (optional: run `cd frontend && npm run build` first)
+# Serve built frontend (run `./run.sh` or `cd frontend && npm run build` first)
 _frontend_dist = Path(__file__).parent / "frontend" / "dist"
 if _frontend_dist.exists():
     app.mount("/assets", StaticFiles(directory=_frontend_dist / "assets"), name="assets")
@@ -408,6 +429,9 @@ if _frontend_dist.exists():
             from fastapi.responses import FileResponse
             return FileResponse(file_path)
         return FileResponse(_frontend_dist / "index.html")
+else:
+    print("Note: frontend/dist not found. Build with: cd frontend && npm run build")
+    print("Or use ./run.sh to build and start.")
 
 
 if __name__ == "__main__":

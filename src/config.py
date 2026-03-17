@@ -143,6 +143,21 @@ def set_schedule_interval(interval_minutes: int) -> None:
         yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
+def set_download_format(format: str) -> None:
+    """Update download format in config.yaml. Valid: wav, mp3."""
+    if format not in ("wav", "mp3"):
+        raise ValueError("Format must be wav or mp3")
+    config_path = _get_config_path()
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+    config.setdefault("download", {})
+    config["download"]["format"] = format
+    with open(config_path, "w") as f:
+        yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+
 def _get_config_path() -> Path:
     """Return path to config.yaml."""
     return Path(__file__).parent.parent / "config.yaml"

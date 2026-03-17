@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchConfig, triggerSync, updateSchedule } from '../api';
+import { fetchConfig, triggerSync, updateSchedule, updateFormat } from '../api';
 
 export default function Sidebar({ onSyncStart, onSyncing }) {
   const [freq, setFreq] = useState(30);
+  const [format, setFormat] = useState('wav');
   const [autoDownload, setAutoDownload] = useState(true);
   const [config, setConfig] = useState(null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [savingFormat, setSavingFormat] = useState(false);
   const syncing = onSyncing ?? false;
 
   useEffect(() => {
@@ -14,6 +16,7 @@ export default function Sidebar({ onSyncStart, onSyncing }) {
       .then((c) => {
         setConfig(c);
         setFreq(c.schedule_interval_minutes ?? 30);
+        setFormat(c.download_format ?? 'wav');
       })
       .catch(() => setConfig(null));
   }, []);
@@ -38,6 +41,16 @@ export default function Sidebar({ onSyncStart, onSyncing }) {
       .finally(() => setSaving(false));
   }, [freq]);
 
+  const handleFormatChange = useCallback((newFormat) => {
+    if (newFormat === format) return;
+    setSavingFormat(true);
+    setError(null);
+    updateFormat(newFormat)
+      .then(() => setFormat(newFormat))
+      .catch((e) => setError(e.message))
+      .finally(() => setSavingFormat(false));
+  }, [format]);
+
   const freqDisplay = freq >= 60 ? `${Math.round(freq / 60)} hrs` : `${freq} min`;
 
   return (
@@ -54,7 +67,7 @@ export default function Sidebar({ onSyncStart, onSyncing }) {
       </div>
 
       <div className="sidebar-section">
-        <div className="section-title">Sync Schedule</div>
+        <div className="section-title">Sync Configuration</div>
         <div className="sync-control">
           <div className="knob-container">
             <span className="knob-label">Frequency</span>
@@ -71,6 +84,27 @@ export default function Sidebar({ onSyncStart, onSyncing }) {
             onTouchEnd={handleFreqCommit}
             title="Drag to adjust sync frequency (15 min – 24 hrs)"
           />
+          <div className="sync-row">
+            <span className="sync-label">Format</span>
+            <div className="format-selector">
+              <button
+                type="button"
+                className={`format-btn ${format === 'wav' ? 'active' : ''}`}
+                onClick={() => handleFormatChange('wav')}
+                disabled={savingFormat}
+              >
+                WAV
+              </button>
+              <button
+                type="button"
+                className={`format-btn ${format === 'mp3' ? 'active' : ''}`}
+                onClick={() => handleFormatChange('mp3')}
+                disabled={savingFormat}
+              >
+                MP3
+              </button>
+            </div>
+          </div>
           <div className="sync-row">
             <span className="sync-label">Auto-download</span>
             <label className="toggle-switch">

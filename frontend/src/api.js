@@ -1,5 +1,12 @@
 const API_BASE = '/api';
 
+function fetchWithTimeout(url, options = {}, timeout = 15000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(id));
+}
+
 export async function removePlaylist(playlistId) {
   const res = await fetch(`${API_BASE}/playlists/${playlistId}`, { method: 'DELETE' });
   if (!res.ok) {
@@ -39,8 +46,19 @@ export async function addPlaylist(urlOrId, name = null) {
 }
 
 export async function fetchPlaylists() {
-  const res = await fetch(`${API_BASE}/playlists`);
-  if (!res.ok) throw new Error('Failed to fetch playlists');
+  let res;
+  try {
+    res = await fetchWithTimeout(`${API_BASE}/playlists`);
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new Error('Request timed out. Is the server running?');
+    }
+    throw new Error('Cannot connect to server. Start it with: ./run.sh');
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to fetch playlists (${res.status})`);
+  }
   return res.json();
 }
 
@@ -49,6 +67,19 @@ export async function updateSchedule(intervalMinutes) {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ interval_minutes: intervalMinutes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to update');
+  }
+  return res.json();
+}
+
+export async function updateFormat(format) {
+  const res = await fetch(`${API_BASE}/config/format`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
