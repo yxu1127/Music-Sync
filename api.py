@@ -15,8 +15,11 @@ from pydantic import BaseModel
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown hooks."""
-    from src.config import setup_cloud_secrets
-    setup_cloud_secrets()
+    try:
+        from src.config import setup_cloud_secrets
+        setup_cloud_secrets()
+    except Exception as e:
+        print(f"Startup warning: {e}")
     yield
 
 
@@ -412,14 +415,21 @@ def trigger_sync(request: SyncRequest = SyncRequest()):
 # Serve built frontend (run `./run.sh` or `cd frontend && npm run build` first)
 _frontend_dist = Path(__file__).parent / "frontend" / "dist"
 if _frontend_dist.exists():
+    from fastapi.responses import FileResponse
+
     app.mount("/assets", StaticFiles(directory=_frontend_dist / "assets"), name="assets")
 
-    @app.get("/{path:path}")
+    @app.api_route("/", methods=["GET", "HEAD"])
+    def serve_index():
+        return FileResponse(_frontend_dist / "index.html")
+
+    @app.api_route("/{path:path}", methods=["GET", "HEAD"])
     def serve_spa(path: str):
-        """Serve index.html for SPA routing; static files for assets."""
+        """Serve static files or index.html for SPA routing."""
+        if not path or path == "index.html":
+            return FileResponse(_frontend_dist / "index.html")
         file_path = _frontend_dist / path
         if file_path.is_file():
-            from fastapi.responses import FileResponse
             return FileResponse(file_path)
         return FileResponse(_frontend_dist / "index.html")
 else:
