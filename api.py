@@ -133,14 +133,11 @@ def _extract_playlist_id(s: str) -> Optional[str]:
 @app.get("/api/playlists", response_model=list[PlaylistInfo])
 def list_playlists():
     """List configured playlists."""
-    from src.config import get_playlist_ids, load_config
+    from src.playlist_monitor import get_playlist_thumbnail
+    from src.playlist_store import get_playlists, save_playlist_thumbnail
 
     try:
-        config = load_config()
-        playlists = get_playlist_ids(config)
-        from src.config import save_playlist_thumbnail
-        from src.playlist_monitor import get_playlist_thumbnail
-
+        playlists = get_playlists()
         result = []
         for p in playlists:
             thumb = p.get("thumbnail")
@@ -167,10 +164,9 @@ def list_playlists():
 @app.patch("/api/playlists/{playlist_id}", response_model=PlaylistInfo)
 def toggle_playlist_pause(playlist_id: str, body: PausePlaylistRequest = PausePlaylistRequest()):
     """Set paused state. Body: { \"paused\": true } to stop, { \"paused\": false } to resume."""
-    from src.config import get_playlist_ids, load_config, set_playlist_paused
+    from src.playlist_store import get_playlists, set_playlist_paused
 
-    config = load_config()
-    playlists = get_playlist_ids(config)
+    playlists = get_playlists()
     pl = next((p for p in playlists if p["id"] == playlist_id), None)
     if not pl:
         raise HTTPException(status_code=404, detail=f"Playlist {playlist_id} not found")
@@ -188,10 +184,10 @@ def toggle_playlist_pause(playlist_id: str, body: PausePlaylistRequest = PausePl
 @app.delete("/api/playlists/{playlist_id}")
 def remove_playlist(playlist_id: str):
     """Remove a playlist from config."""
-    from src.config import remove_playlist as config_remove_playlist
+    from src.playlist_store import remove_playlist as store_remove_playlist
 
     try:
-        config_remove_playlist(playlist_id)
+        store_remove_playlist(playlist_id)
         return {"success": True}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -202,7 +198,7 @@ def remove_playlist(playlist_id: str):
 @app.post("/api/playlists", response_model=PlaylistInfo)
 def add_playlist(request: AddPlaylistRequest):
     """Add a playlist by URL or ID. Fetches name from YouTube if not provided."""
-    from src.config import add_playlist as config_add_playlist
+    from src.playlist_store import add_playlist as store_add_playlist
 
     playlist_id = None
     if request.url:
@@ -217,7 +213,7 @@ def add_playlist(request: AddPlaylistRequest):
         )
 
     try:
-        added = config_add_playlist(playlist_id, name=request.name)
+        added = store_add_playlist(playlist_id, name=request.name)
         return PlaylistInfo(
             id=added["id"],
             name=added["name"],
@@ -261,11 +257,12 @@ def update_format(body: UpdateFormatRequest):
 @app.get("/api/config", response_model=ConfigResponse)
 def get_config():
     """Get current configuration (safe for display, no secrets)."""
-    from src.config import get_download_config, get_playlist_ids, get_storage_config, load_config
+    from src.config import get_download_config, get_storage_config, load_config
+    from src.playlist_store import get_playlists
 
     try:
         config = load_config()
-        playlists = get_playlist_ids(config)
+        playlists = get_playlists()
         download = get_download_config(config)
         storage = get_storage_config(config)
         schedule = config.get("schedule", {})
@@ -292,12 +289,11 @@ def get_config():
 @app.get("/api/tracks/pending", response_model=list[PendingTrack])
 def list_pending_tracks():
     """List tracks that are in playlists but not yet downloaded (queueing)."""
-    from src.config import get_playlist_ids, load_config
     from src.playlist_monitor import get_new_tracks
+    from src.playlist_store import get_playlists
 
     try:
-        config = load_config()
-        playlists = get_playlist_ids(config)
+        playlists = get_playlists()
         result = []
         for p in playlists:
             if p.get("paused", False):
@@ -329,14 +325,13 @@ def get_sync_status():
 @app.get("/api/tracks", response_model=list[DownloadedTrack])
 def list_downloaded_tracks(limit: int = 100):
     """List recently downloaded tracks."""
-    from src.config import get_playlist_ids, load_config
     from src.db import get_all_processed_tracks, init_db
+    from src.playlist_store import get_playlists
 
     try:
         init_db()
         tracks = get_all_processed_tracks(limit=limit)
-        config = load_config()
-        playlists = {p["id"]: p.get("name", "Unknown") for p in get_playlist_ids(config)}
+        playlists = {p["id"]: p.get("name", "Unknown") for p in get_playlists()}
 
         return [
             DownloadedTrack(
@@ -355,8 +350,8 @@ def list_downloaded_tracks(limit: int = 100):
 
 def _run_sync_with_progress(playlist_id, result_holder):
     """Run sync in background, updating sync_state for progress."""
-    from src.config import get_playlist_ids, load_config
     from src.orchestrator import run
+    from src.playlist_store import get_playlists
     from src.sync_state import set_current, set_running
 
     def progress_cb(video_id, title, artist, pl_id, pl_name, pct):
@@ -370,8 +365,7 @@ def _run_sync_with_progress(playlist_id, result_holder):
     try:
         set_running(True)
         summary = run(playlist_id=playlist_id, progress_callback=progress_cb)
-        config = load_config()
-        playlists = {p["id"]: p.get("name", "Unknown") for p in get_playlist_ids(config)}
+        playlists = {p["id"]: p.get("name", "Unknown") for p in get_playlists()}
         result_holder["result"] = {
             "success": True,
             "total_downloaded": sum(s["downloaded"] for s in summary.values()),
@@ -395,7 +389,6 @@ def _run_sync_with_progress(playlist_id, result_holder):
 @app.post("/api/sync", response_model=SyncResponse)
 def trigger_sync(request: SyncRequest = SyncRequest()):
     """Trigger a sync. Runs in background; poll GET /api/sync/status for progress."""
-    from src.config import get_playlist_ids, load_config
     from src.sync_state import get_state
 
     state = get_state()

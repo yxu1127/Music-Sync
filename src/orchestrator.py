@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from . import db
-from .config import get_download_config, get_playlist_ids, get_storage_config, load_config
+from .config import get_download_config, get_storage_config, load_config
+from .playlist_store import get_playlists
 from .downloader import download_track
 from .drive_uploader import get_drive_service, ensure_folder, upload_file
 from .playlist_monitor import get_new_tracks
@@ -20,7 +21,7 @@ def run(playlist_id: Optional[str] = None, progress_callback: Optional[Callable]
     config = load_config()
     db.init_db()
 
-    playlists = get_playlist_ids(config)
+    playlists = get_playlists()
     if playlist_id:
         playlists = [p for p in playlists if p["id"] == playlist_id]
         if not playlists:
