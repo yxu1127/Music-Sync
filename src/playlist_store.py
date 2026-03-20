@@ -28,7 +28,11 @@ def get_playlists() -> List[dict]:
             return [{"id": row["id"], "name": row["name"], "paused": row.get("paused", False),
                     "thumbnail": row.get("thumbnail")} for row in (r.data or [])]
         except Exception as e:
-            print(f"Supabase get_playlists error: {e}")
+            err = str(e)
+            if "404" in err or "JSON could not be generated" in err:
+                print("Supabase get_playlists error: Wrong SUPABASE_URL. Use Project URL from Supabase → Settings → API (e.g. https://xxx.supabase.co), NOT the dashboard URL.")
+            else:
+                print(f"Supabase get_playlists error: {e}")
             return []
     from .config import load_config, get_playlist_ids
     config = load_config()

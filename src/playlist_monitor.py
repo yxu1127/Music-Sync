@@ -8,10 +8,25 @@ import yt_dlp
 from . import db
 
 
+def _get_ydl_cookie_opts() -> dict:
+    """Return yt-dlp cookie options from config (needed for YouTube Music playlists)."""
+    from .config import load_config
+    config = load_config()
+    download = config.get("download", {})
+    cookies_from_file = download.get("cookies_from_file")
+    cookies_browser = download.get("cookies_browser")
+    opts = {}
+    if cookies_from_file and Path(cookies_from_file).exists():
+        opts["cookiefile"] = cookies_from_file
+    elif cookies_browser:
+        opts["cookiesfrombrowser"] = (cookies_browser,)
+    return opts
+
+
 def get_playlist_thumbnail(playlist_id: str) -> Optional[str]:
     """Fetch playlist thumbnail URL from YouTube. Returns None on failure."""
     url = f"https://www.youtube.com/playlist?list={playlist_id}"
-    ydl_opts = {"quiet": True, "extract_flat": True}
+    ydl_opts = {"quiet": True, "extract_flat": True, **_get_ydl_cookie_opts()}
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -60,6 +75,7 @@ def get_new_tracks(playlist_id: str) -> List[dict]:
         "quiet": True,
         "extract_flat": False,
         "extract_info": True,
+        **_get_ydl_cookie_opts(),
     }
 
     new_tracks = []

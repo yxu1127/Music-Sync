@@ -63,7 +63,7 @@ Add these one by one:
 |-----|-------|---------|
 | `COOKIES_BASE64` | *(paste from your cookies_base64.txt)* | ✓ Yes |
 | `PYTHONUNBUFFERED` | `1` | No |
-| `SUPABASE_URL` | *(your Supabase Project URL, e.g. https://xxx.supabase.co)* | No |
+| `SUPABASE_URL` | *(Project URL from Supabase → Settings → API, e.g. https://abcdefgh.supabase.co — NOT the dashboard URL)* | No |
 | `SUPABASE_KEY` | *(your Supabase Secret key)* | ✓ Yes |
 
 **If you use Google Drive**, also add:
@@ -107,3 +107,4 @@ Add these one by one:
 | **403 / Download fails** | Update `COOKIES_BASE64` — export fresh cookies from YouTube Music. |
 | **Blank page** | Wait for the build to finish. Check that `frontend/dist` exists in your repo. |
 | **Supabase connection error** | Verify `SUPABASE_URL` and `SUPABASE_KEY` are correct. No extra spaces. |
+| **Supabase "JSON could not be generated" / 404** | You used the wrong URL. Use **Project URL** from Supabase → Project Settings → API (e.g. `https://abcdefgh.supabase.co`). Do **not** use the dashboard URL (`supabase.com/dashboard/...`). |
