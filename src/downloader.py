@@ -57,7 +57,8 @@ def download_track(
             progress_callback(0)
 
     ydl_opts = {
-        "format": "bestaudio/best",
+        # Fallbacks for videos where bestaudio/best fails (region/age restrictions, format quirks)
+        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
         "outtmpl": out_tmpl,
         "quiet": False,
         "no_warnings": False,
