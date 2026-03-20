@@ -56,43 +56,52 @@ def download_track(
         else:
             progress_callback(0)
 
-    ydl_opts = {
-        # Fallbacks for videos where bestaudio/best fails (region/age restrictions, format quirks)
-        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
-        "outtmpl": out_tmpl,
-        "quiet": False,
-        "no_warnings": False,
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": format,
-                "preferredquality": quality,
-            }
-        ],
-    }
-    if progress_callback:
-        ydl_opts["progress_hooks"] = [_progress_hook]
-    # Cookies for YouTube auth (browser or file for cloud hosting)
-    if cookies_from_file and Path(cookies_from_file).exists():
-        ydl_opts["cookiefile"] = cookies_from_file
-    elif cookies_browser:
-        ydl_opts["cookiesfrombrowser"] = (cookies_browser,)
+    def _make_opts(fmt: str) -> dict:
+        opts = {
+            "format": fmt,
+            "outtmpl": out_tmpl,
+            "quiet": False,
+            "no_warnings": False,
+            "postprocessors": [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": format,
+                    "preferredquality": quality,
+                }
+            ],
+            # Try android client first (often has formats that work without signature solving)
+            "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
+        }
+        return opts
 
-    # Use Node.js for YouTube signature solving (Deno is default but may not be installed)
     node_path = shutil.which("node")
-    if node_path:
-        ydl_opts["js_runtimes"] = {"node": {"path": node_path}}
-
     url = f"https://www.youtube.com/watch?v={video_id}"
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            if not info:
-                return None
+    # Format fallbacks: try specific formats first, then simpler selectors if they fail
+    format_tries = [
+        "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
+        "bestaudio/best",
+        "best",
+    ]
 
-            # Find the output file (yt-dlp adds the extension)
-            base = Path(ydl.prepare_filename(info))
+    last_error = None
+    for fmt in format_tries:
+        ydl_opts = _make_opts(fmt)
+        if progress_callback:
+            ydl_opts["progress_hooks"] = [_progress_hook]
+        if cookies_from_file and Path(cookies_from_file).exists():
+            ydl_opts["cookiefile"] = cookies_from_file
+        elif cookies_browser:
+            ydl_opts["cookiesfrombrowser"] = (cookies_browser,)
+        if node_path:
+            ydl_opts["js_runtimes"] = {"node": {"path": node_path}}
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                if not info:
+                    continue
+                base = Path(ydl.prepare_filename(info))
             # After FFmpegExtractAudio, extension changes to format
             audio_file = base.with_suffix(f".{format}")
             if audio_file.exists():
@@ -104,6 +113,14 @@ def download_track(
 
             return None
 
-    except Exception as e:
-        print(f"Download failed for {video_id}: {e}")
-        return None
+        except Exception as e:
+            last_error = e
+            err_str = str(e).lower()
+            if "requested format is not available" in err_str:
+                print(f"Format {fmt!r} failed for {video_id}, trying next...")
+                continue
+            print(f"Download failed for {video_id}: {e}")
+            return None
+
+    print(f"Download failed for {video_id}: {last_error}")
+    return None
